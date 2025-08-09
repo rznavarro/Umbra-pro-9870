@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2 } from 'lucide-react';
 
 interface Tool {
   id: number;
@@ -162,18 +162,38 @@ const tools: Tool[] = [
 ];
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+  const handleLogin = async () => {
+    if (password !== 'UMBRA') {
+      setAuthError('Contraseña incorrecta');
+      return;
+    }
+
+    setIsLoading(true);
+    setAuthError('');
+
+    // Simular carga de 5 segundos
+    setTimeout(() => {
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    }, 5000);
+  };
 
   const openChat = (tool: Tool) => {
     setSelectedTool(tool);
     setMessages([
       {
         id: 1,
-        text: `Bienvenido a ${tool.name}. Soy tu asistente especializado. ¿En qué puedo ayudarte?`,
+        text: `Bienvenido a ${tool.name}. ¿En qué puedo ayudarte?`,
         isUser: false,
         timestamp: new Date()
       }
@@ -184,7 +204,7 @@ function App() {
     setSelectedTool(null);
     setMessages([]);
     setInputMessage('');
-    setIsLoading(false);
+    setIsSending(false);
     setUploadedFile(null);
   };
 
@@ -198,11 +218,11 @@ function App() {
   const sendMessage = async () => {
     if (!inputMessage.trim() && !uploadedFile) return;
 
-    setIsLoading(true);
+    setIsSending(true);
 
     const userMessage: ChatMessage = {
       id: messages.length + 1,
-      text: inputMessage || `Archivo adjunto: ${uploadedFile?.name}`,
+      text: inputMessage || `Archivo: ${uploadedFile?.name}`,
       isUser: true,
       timestamp: new Date(),
       fileAttachment: uploadedFile?.name
@@ -210,7 +230,7 @@ function App() {
 
     const loadingMessage: ChatMessage = {
       id: messages.length + 2,
-      text: "Procesando tu solicitud...",
+      text: "Procesando...",
       isUser: false,
       timestamp: new Date(),
       isLoading: true
@@ -224,9 +244,6 @@ function App() {
       const formData = new FormData();
       formData.append('message', inputMessage);
       formData.append('tool', selectedTool!.name);
-      formData.append('toolId', selectedTool!.id.toString());
-      formData.append('timestamp', new Date().toISOString());
-      formData.append('sessionId', `session_${Date.now()}`);
       
       if (uploadedFile) {
         formData.append('file', uploadedFile);
@@ -240,15 +257,11 @@ function App() {
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const responseText = await response.text();
       
       const botResponse: ChatMessage = {
         id: messages.length + 2,
-        text: responseText || "He procesado tu solicitud exitosamente.",
+        text: responseText || "Solicitud procesada exitosamente.",
         isUser: false,
         timestamp: new Date()
       };
@@ -258,11 +271,9 @@ function App() {
       ));
 
     } catch (error) {
-      console.error('Webhook error:', error);
-      
       const errorResponse: ChatMessage = {
         id: messages.length + 2,
-        text: "Error procesando la solicitud. Verifica la conexión.",
+        text: "Error en la conexión. Intenta nuevamente.",
         isUser: false,
         timestamp: new Date()
       };
@@ -271,193 +282,169 @@ function App() {
         msg.isLoading ? errorResponse : msg
       ));
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
+    if (e.key === 'Enter' && !isSending) {
       sendMessage();
     }
   };
 
+  // Pantalla de autenticación
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/20 via-black to-yellow-800/10"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-600/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-400/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        {isLoading ? (
+          // Pantalla de carga
+          <div className="relative z-10 text-center">
+            <div className="mb-8">
+              <Loader2 className="w-16 h-16 text-yellow-400 animate-spin mx-auto mb-4" />
+              <h2 className="text-2xl font-light text-yellow-400 tracking-[0.3em] mb-2">
+                CARGANDO
+              </h2>
+              <p className="text-gray-400 text-sm tracking-wider">
+                Inicializando sistema...
+              </p>
+            </div>
+            <div className="w-64 h-1 bg-gray-800 rounded-full mx-auto overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+        ) : (
+          // Pantalla de login
+          <div className="relative z-10 bg-black/80 backdrop-blur-sm border border-yellow-600/30 rounded-lg p-8 w-full max-w-md">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-thin tracking-[0.3em] mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
+                UMBRA
+              </h1>
+              <p className="text-gray-400 text-sm tracking-wider uppercase">
+                Acceso Restringido
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-yellow-300 text-sm mb-2 tracking-wide">
+                  Contraseña de Acceso
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                    className="w-full bg-gray-900/50 text-yellow-100 pl-10 pr-4 py-3 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none transition-colors"
+                    placeholder="Ingresa la contraseña"
+                  />
+                </div>
+                {authError && (
+                  <p className="text-red-400 text-xs mt-2 animate-pulse">
+                    {authError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleLogin}
+                className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+              >
+                ACCEDER
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Chat interface más pequeño y minimalista
   const renderChatInterface = () => {
     if (!selectedTool) return null;
 
-    const { chatType } = selectedTool;
-
     return (
-      <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-gradient-to-br from-gray-900 to-black rounded-lg shadow-2xl w-full max-w-5xl h-[85vh] flex border border-yellow-600/30">
+      <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-2xl h-[70vh] flex flex-col border border-yellow-600/20 animate-slideUp">
           
-          {/* Sidebar for specialized tools */}
-          {(chatType === 'document' || chatType === 'analysis' || chatType === 'compliance') && (
-            <div className="w-80 bg-gradient-to-b from-gray-800 to-gray-900 border-r border-yellow-600/20 p-6">
-              <h4 className="text-yellow-400 font-light text-lg mb-6 tracking-wide">
-                {chatType === 'document' && 'Gestión de Documentos'}
-                {chatType === 'analysis' && 'Centro de Análisis'}
-                {chatType === 'compliance' && 'Panel de Cumplimiento'}
-              </h4>
-              
-              {chatType === 'document' && (
-                <div className="space-y-4">
-                  <div className="bg-black/40 rounded-lg p-4 border border-yellow-600/20">
-                    <label className="block text-yellow-300 text-sm mb-2">Subir Documento</label>
-                    <input
-                      type="file"
-                      onChange={handleFileUpload}
-                      className="w-full text-xs text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-600 file:text-black file:font-medium hover:file:bg-yellow-500"
-                      accept=".pdf,.doc,.docx,.txt"
-                    />
-                    {uploadedFile && (
-                      <p className="text-yellow-400 text-xs mt-2">
-                        Archivo: {uploadedFile.name}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <button className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black py-2 px-4 rounded-lg text-sm font-medium hover:from-yellow-500 hover:to-yellow-600 transition-all">
-                      <FileText className="w-4 h-4 inline mr-2" />
-                      Análisis Completo
-                    </button>
-                    <button className="w-full bg-gray-700 text-yellow-300 py-2 px-4 rounded-lg text-sm hover:bg-gray-600 transition-all">
-                      <Download className="w-4 h-4 inline mr-2" />
-                      Generar Reporte
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {chatType === 'analysis' && (
-                <div className="space-y-4">
-                  <div className="bg-black/40 rounded-lg p-4 border border-yellow-600/20">
-                    <h5 className="text-yellow-300 text-sm mb-3">Tipo de Análisis</h5>
-                    <div className="space-y-2">
-                      <label className="flex items-center text-gray-300 text-sm">
-                        <input type="radio" name="analysis" className="mr-2 accent-yellow-600" />
-                        Análisis de Riesgo
-                      </label>
-                      <label className="flex items-center text-gray-300 text-sm">
-                        <input type="radio" name="analysis" className="mr-2 accent-yellow-600" />
-                        Evaluación Legal
-                      </label>
-                      <label className="flex items-center text-gray-300 text-sm">
-                        <input type="radio" name="analysis" className="mr-2 accent-yellow-600" />
-                        Informe Ejecutivo
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <button className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black py-2 px-4 rounded-lg text-sm font-medium hover:from-yellow-500 hover:to-yellow-600 transition-all">
-                    <Eye className="w-4 h-4 inline mr-2" />
-                    Iniciar Análisis
-                  </button>
-                </div>
-              )}
-
-              {chatType === 'compliance' && (
-                <div className="space-y-4">
-                  <div className="bg-black/40 rounded-lg p-4 border border-yellow-600/20">
-                    <h5 className="text-yellow-300 text-sm mb-3">Estado de Cumplimiento</h5>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-300">Documentos</span>
-                        <span className="text-green-400">85%</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-300">Permisos</span>
-                        <span className="text-yellow-400">60%</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-300">Firmas</span>
-                        <span className="text-red-400">40%</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <button className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 text-black py-2 px-4 rounded-lg text-sm font-medium hover:from-yellow-500 hover:to-yellow-600 transition-all">
-                    <Shield className="w-4 h-4 inline mr-2" />
-                    Verificar Todo
-                  </button>
-                </div>
-              )}
+          {/* Header más compacto */}
+          <div className="flex items-center justify-between p-4 border-b border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
+            <div>
+              <h3 className="font-light text-yellow-400 text-lg tracking-wide">
+                {selectedTool.name}
+              </h3>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">{selectedTool.category}</p>
             </div>
-          )}
+            <button
+              onClick={closeChat}
+              className="text-gray-400 hover:text-yellow-400 transition-colors duration-200 hover:rotate-90 transform"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-          {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col">
-            {/* Chat Header */}
-            <div className="flex items-center justify-between p-6 border-b border-yellow-600/20 bg-gradient-to-r from-gray-900 to-black">
-              <div>
-                <h3 className="font-light text-yellow-400 tracking-wide text-xl">
-                  {selectedTool.name}
-                </h3>
-                <p className="text-sm text-gray-400">{selectedTool.category}</p>
-              </div>
-              <button
-                onClick={closeChat}
-                className="text-gray-400 hover:text-yellow-400 transition-colors duration-200"
+          {/* Messages más compactos */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-black/50 to-gray-900/50">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-messageSlide`}
               >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-black to-gray-900">
-              {messages.map((message) => (
                 <div
-                  key={message.id}
-                  className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                  className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                    message.isUser
+                      ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-black font-medium'
+                      : `bg-gray-800/60 text-gray-200 border border-yellow-600/20 ${
+                          message.isLoading ? 'animate-pulse' : ''
+                        }`
+                  }`}
                 >
-                  <div
-                    className={`max-w-2xl px-4 py-3 rounded-lg ${
-                      message.isUser
-                        ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-black text-sm font-medium'
-                        : `bg-gray-800/80 text-gray-200 border border-yellow-600/20 text-sm ${
-                            message.isLoading ? 'animate-pulse' : ''
-                          }`
-                    }`}
-                  >
-                    {message.fileAttachment && (
-                      <div className="flex items-center mb-2 text-xs opacity-75">
-                        <FileText className="w-3 h-3 mr-1" />
-                        {message.fileAttachment}
-                      </div>
-                    )}
-                    {message.text}
-                    {message.isLoading && (
-                      <div className="flex space-x-1 mt-2">
-                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      </div>
-                    )}
-                  </div>
+                  {message.fileAttachment && (
+                    <div className="flex items-center mb-1 text-xs opacity-75">
+                      <FileText className="w-3 h-3 mr-1" />
+                      {message.fileAttachment}
+                    </div>
+                  )}
+                  {message.text}
+                  {message.isLoading && (
+                    <div className="flex space-x-1 mt-1">
+                      <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce"></div>
+                      <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            {/* Chat Input */}
-            <div className="p-6 border-t border-yellow-600/20 bg-gradient-to-r from-gray-900 to-black">
-              <div className="flex space-x-3">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading}
-                  placeholder="Escribe tu consulta..."
-                  className="flex-1 bg-black/60 text-yellow-100 px-4 py-3 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-500"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading || (!inputMessage.trim() && !uploadedFile)}
-                  className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
               </div>
+            ))}
+          </div>
+
+          {/* Input más compacto */}
+          <div className="p-4 border-t border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isSending}
+                placeholder="Escribe aquí..."
+                className="flex-1 bg-black/40 text-yellow-100 px-3 py-2 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none disabled:opacity-50 text-sm placeholder-gray-500"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={isSending || (!inputMessage.trim() && !uploadedFile)}
+                className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black px-3 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 font-medium transform hover:scale-105"
+              >
+                <Send className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -466,77 +453,53 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-yellow-100">
-      {/* Header */}
-      <header className="relative py-16 px-8 text-center border-b border-yellow-600/20">
-        <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/10 to-transparent"></div>
+    <div className="min-h-screen bg-black text-yellow-100 overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-600/3 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-400/3 rounded-full blur-3xl animate-float-delayed"></div>
+      </div>
+
+      {/* Header más dinámico */}
+      <header className="relative py-12 px-8 text-center border-b border-yellow-600/20 animate-fadeInDown">
+        <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/5 to-transparent"></div>
         <div className="relative">
-          <h1 className="text-7xl font-thin tracking-[0.3em] mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
+          <h1 className="text-6xl font-thin tracking-[0.3em] mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 animate-glow">
             UMBRA
           </h1>
-          <p className="text-xl text-gray-400 font-light tracking-[0.2em] uppercase">
+          <p className="text-lg text-gray-400 font-light tracking-[0.2em] uppercase animate-fadeIn">
             Legal Intelligence System
           </p>
-          <div className="mt-6 w-32 h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent mx-auto"></div>
+          <div className="mt-4 w-24 h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent mx-auto animate-expand"></div>
         </div>
       </header>
 
-      {/* Tools Grid */}
-      <main className="px-8 py-12">
-        <div className="max-w-6xl mx-auto">
-          <style jsx>{`
-            @keyframes fadeInUp {
-              from {
-                opacity: 0;
-                transform: translateY(20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            
-            @keyframes glow {
-              0%, 100% {
-                box-shadow: 0 0 5px rgba(202, 138, 4, 0.3);
-              }
-              50% {
-                box-shadow: 0 0 20px rgba(202, 138, 4, 0.6);
-              }
-            }
-            
-            .tool-card {
-              animation: fadeInUp 0.6s ease-out forwards;
-              opacity: 0;
-            }
-            
-            .tool-card:hover {
-              animation: glow 2s ease-in-out infinite;
-            }
-          `}</style>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {/* Grid más dinámico y compacto */}
+      <main className="px-6 py-8 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3">
             {tools.map((tool, index) => (
               <div
                 key={tool.id}
-                className="tool-card group relative bg-gradient-to-br from-gray-900/60 to-black/80 backdrop-blur-sm rounded-lg p-4 border border-yellow-600/20 hover:border-yellow-400/60 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                className="group relative bg-gradient-to-br from-gray-900/40 to-black/60 backdrop-blur-sm rounded-lg p-3 border border-yellow-600/20 hover:border-yellow-400/60 transition-all duration-300 cursor-pointer transform hover:scale-110 hover:-translate-y-1 animate-cardSlideUp"
                 onClick={() => openChat(tool)}
                 style={{
-                  animationDelay: `${index * 0.08}s`
+                  animationDelay: `${index * 0.05}s`
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/0 to-yellow-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                 
                 <div className="relative z-10 text-center">
-                  <h3 className="text-sm font-light text-yellow-100 mb-2 tracking-wide group-hover:text-yellow-300 transition-colors duration-300">
+                  <h3 className="text-xs font-light text-yellow-100 mb-1 tracking-wide group-hover:text-yellow-300 transition-colors duration-300 leading-tight">
                     {tool.name}
                   </h3>
                   
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-medium group-hover:text-yellow-600 transition-colors duration-300">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium group-hover:text-yellow-600 transition-colors duration-300">
                     {tool.category}
                   </div>
                   
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
                   </div>
                 </div>
               </div>
@@ -548,12 +511,69 @@ function App() {
       {/* Chat Interface */}
       {renderChatInterface()}
 
-      {/* Footer */}
-      <footer className="border-t border-yellow-600/20 py-8 text-center bg-gradient-to-t from-gray-900/50 to-transparent">
-        <p className="text-gray-500 text-sm font-light tracking-[0.15em] uppercase">
+      {/* Footer más sutil */}
+      <footer className="border-t border-yellow-600/10 py-6 text-center bg-gradient-to-t from-gray-900/30 to-transparent relative z-10">
+        <p className="text-gray-600 text-xs font-light tracking-[0.15em] uppercase">
           © 2025 UMBRA • Classified Legal Technology
         </p>
       </footer>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes cardSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes messageSlide {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        @keyframes float-delayed {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(-180deg); }
+        }
+        
+        @keyframes glow {
+          0%, 100% { text-shadow: 0 0 5px rgba(202, 138, 4, 0.3); }
+          50% { text-shadow: 0 0 20px rgba(202, 138, 4, 0.6); }
+        }
+        
+        @keyframes expand {
+          from { width: 0; }
+          to { width: 6rem; }
+        }
+        
+        .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
+        .animate-fadeInDown { animation: fadeInDown 0.8s ease-out; }
+        .animate-slideUp { animation: slideUp 0.4s ease-out; }
+        .animate-cardSlideUp { animation: cardSlideUp 0.6s ease-out forwards; opacity: 0; }
+        .animate-messageSlide { animation: messageSlide 0.3s ease-out; }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-delayed { animation: float-delayed 8s ease-in-out infinite; }
+        .animate-glow { animation: glow 3s ease-in-out infinite; }
+        .animate-expand { animation: expand 1s ease-out 0.5s forwards; width: 0; }
+      `}</style>
     </div>
   );
 }
