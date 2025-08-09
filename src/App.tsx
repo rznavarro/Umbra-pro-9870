@@ -23,35 +23,35 @@ const tools: Tool[] = [
     id: 1,
     name: "Chat Legal 24/7",
     category: "Consultoría",
-    webhookUrl: "https://39ac2851022c.ngrok-free.app/webhook/Chat%20Legal%2024/7",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Chat%20Legal%2024/7",
     chatType: 'chat'
   },
   {
     id: 2,
     name: "Revisión Rápida",
     category: "Documentos",
-    webhookUrl: "https://39ac2851022c.ngrok-free.app/webhook/Revisi%C3%B3n%20R%C3%A1pida%20de%20Documentos",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Revisi%C3%B3n%20R%C3%A1pida%20de%20Documentos",
     chatType: 'document'
   },
   {
     id: 3,
     name: "Informes Legales",
     category: "Análisis",
-    webhookUrl: "https://39ac2851022c.ngrok-free.app/webhook/Generaci%C3%B3n%20de%20Informes%20Legales",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Generaci%C3%B3n%20de%20Informes%20Legales",
     chatType: 'analysis'
   },
   {
     id: 4,
     name: "Simulador Legal",
     category: "Investigación",
-    webhookUrl: "https://39ac2851022c.ngrok-free.app/webhook/Simulador%20de%20Problemas%20Legales",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Simulador%20de%20Problemas%20Legales",
     chatType: 'research'
   },
   {
     id: 5,
     name: "Normativas Locales",
     category: "Búsqueda",
-    webhookUrl: "https://39ac2851022c.ngrok-free.app/webhook/Buscador%20de%20Normativas%20Locales",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Buscador%20de%20Normativas%20Locales",
     chatType: 'research'
   },
   {
