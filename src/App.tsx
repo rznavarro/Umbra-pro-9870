@@ -37,7 +37,7 @@ const tools: Tool[] = [
     id: 3,
     name: "Informes Legales",
     category: "Análisis",
-    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Generaci%C3%B3n%20de%20Informes%20Legales",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Generaci%C3%B3n%20de%20Informes%20Legales",
     chatType: 'analysis'
   },
   {
