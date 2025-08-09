@@ -44,8 +44,7 @@ const tools: Tool[] = [
     id: 4,
     name: "Simulador Legal",
     category: "Investigación",
-    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Simulador%20de%20Problemas%20Legales
-",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Simulador%20de%20Problemas%20Legales", 
     chatType: 'research'
   },
   {
