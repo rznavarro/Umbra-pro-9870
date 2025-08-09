@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2, MessageCircle, FileCheck, Edit3, AlertCircle, PenTool, Calendar, BookOpen, TrendingUp } from 'lucide-react';
+import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2, MessageCircle, FileCheck, Edit3, AlertCircle, PenTool, Calendar, BookOpen, TrendingUp, Bot, User, Clock, CheckCircle, FileUp, Zap, Users, Phone, Video, Mail, Star, Award, Briefcase } from 'lucide-react';
 
 interface Tool {
   id: number;
@@ -7,7 +7,7 @@ interface Tool {
   category: string;
   description: string;
   webhookUrl: string;
-  chatType: 'chat' | 'document' | 'analysis' | 'research' | 'compliance';
+  chatType: 'chat' | 'document' | 'analysis' | 'research' | 'compliance' | 'consultation';
   icon: React.ComponentType<any>;
   priority: number;
 }
@@ -19,78 +19,90 @@ interface ChatMessage {
   timestamp: Date;
   isLoading?: boolean;
   fileAttachment?: string;
+  messageType?: 'text' | 'document' | 'template' | 'scenario' | 'normative' | 'agenda';
+  formattedContent?: React.ReactNode;
 }
 
-// CORE 8 FUNCTIONS - High Impact Tools Only
+interface Consultant {
+  id: number;
+  name: string;
+  specialty: string;
+  rating: number;
+  experience: string;
+  available: boolean;
+  avatar: string;
+}
+
+// CORE 8 FUNCTIONS - Optimized for High Impact
 const coreTools: Tool[] = [
   {
     id: 1,
     name: "Chat Legal 24/7",
-    category: "Consultoría",
-    description: "Asesoría legal instantánea disponible las 24 horas",
+    category: "Asistente Avanzado",
+    description: "Centro neurálgico legal con IA avanzada, análisis de documentos, plantillas y escalamiento",
     webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Chat%20Legal%2024/7",
     chatType: 'chat',
-    icon: MessageCircle,
+    icon: Bot,
     priority: 1
   },
   {
     id: 2,
+    name: "Consultoría Especializada",
+    category: "Humanos Expertos",
+    description: "Conexión directa con abogados especializados para casos complejos",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Consultoria",
+    chatType: 'consultation',
+    icon: Users,
+    priority: 2
+  },
+  {
+    id: 3,
     name: "Revisión Rápida",
     category: "Documentos",
     description: "Análisis inmediato de documentos legales",
     webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Revisi%C3%B3n%20R%C3%A1pida%20de%20Documentos",
     chatType: 'document',
     icon: FileCheck,
-    priority: 2
+    priority: 3
   },
   {
-    id: 3,
+    id: 4,
     name: "Corrección de Contratos",
     category: "Automatización",
     description: "Corrección automática e inteligente de contratos",
     webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/correccion_automatica_de_contratos",
     chatType: 'document',
     icon: Edit3,
-    priority: 3
+    priority: 4
   },
   {
-    id: 4,
+    id: 5,
     name: "Análisis de Cláusulas Riesgosas",
     category: "Detección",
     description: "Identificación automática de cláusulas de alto riesgo",
     webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/deteccion_de_clausulas_riesgosas",
     chatType: 'analysis',
     icon: AlertCircle,
-    priority: 4
+    priority: 5
   },
   {
-    id: 5,
+    id: 6,
     name: "Firmas Electrónicas",
     category: "Análisis",
     description: "Validación y análisis de firmas digitales",
     webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/analisis_de_firmas_electronicas",
     chatType: 'analysis',
     icon: PenTool,
-    priority: 5
+    priority: 6
   },
   {
-    id: 6,
+    id: 7,
     name: "Agenda Legal + Recordatorio de Firmas",
     category: "Automatización",
     description: "Gestión automatizada de agenda y recordatorios",
     webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/agenda_legal_automatica",
     chatType: 'compliance',
     icon: Calendar,
-    priority: 6
-  },
-  {
-    id: 7,
-    name: "Normativas Locales",
-    category: "Búsqueda",
-    description: "Búsqueda especializada en normativas y regulaciones",
-    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Buscador%20de%20Normativas%20Locales",
-    chatType: 'research',
-    icon: BookOpen,
     priority: 7
   },
   {
@@ -105,6 +117,37 @@ const coreTools: Tool[] = [
   }
 ];
 
+// Mock consultants data
+const availableConsultants: Consultant[] = [
+  {
+    id: 1,
+    name: "Dr. María González",
+    specialty: "Derecho Corporativo",
+    rating: 4.9,
+    experience: "15 años",
+    available: true,
+    avatar: "MG"
+  },
+  {
+    id: 2,
+    name: "Lic. Carlos Mendoza",
+    specialty: "Derecho Laboral",
+    rating: 4.8,
+    experience: "12 años",
+    available: true,
+    avatar: "CM"
+  },
+  {
+    id: 3,
+    name: "Dra. Ana Ruiz",
+    specialty: "Derecho Civil",
+    rating: 4.9,
+    experience: "18 años",
+    available: false,
+    avatar: "AR"
+  }
+];
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -115,6 +158,8 @@ function App() {
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [showConsultants, setShowConsultants] = useState(false);
+  const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null);
 
   const handleLogin = async () => {
     if (password !== 'UMBRA') {
@@ -134,14 +179,59 @@ function App() {
 
   const openChat = (tool: Tool) => {
     setSelectedTool(tool);
-    setMessages([
-      {
-        id: 1,
-        text: `Bienvenido a ${tool.name}. ${tool.description}. ¿En qué puedo ayudarte?`,
-        isUser: false,
-        timestamp: new Date()
-      }
-    ]);
+    
+    if (tool.id === 1) { // Chat Legal 24/7 - Advanced Assistant
+      setMessages([
+        {
+          id: 1,
+          text: `¡Bienvenido al Asistente Legal Avanzado UMBRA! 🤖⚖️
+
+Soy tu asistente legal inteligente disponible 24/7. Puedo ayudarte con:
+
+📄 **Análisis de Documentos** - Sube contratos para análisis completo
+📝 **Plantillas Inteligentes** - Genero documentos legales personalizados  
+🎯 **Simulación de Escenarios** - Analizo consecuencias legales
+📚 **Normativas Locales** - Consulto leyes y regulaciones vigentes
+📅 **Agenda Legal** - Programo recordatorios y citas
+👨‍💼 **Escalamiento Humano** - Te conecto con abogados especializados
+
+¿En qué puedo asistirte hoy?`,
+          isUser: false,
+          timestamp: new Date(),
+          messageType: 'text'
+        }
+      ]);
+    } else if (tool.id === 2) { // Consultoría Especializada
+      setMessages([
+        {
+          id: 1,
+          text: `Bienvenido a Consultoría Especializada UMBRA 👨‍💼
+
+Te conectamos con abogados expertos para casos complejos que requieren atención personalizada.
+
+Nuestros consultores están especializados en:
+• Derecho Corporativo
+• Derecho Laboral  
+• Derecho Civil
+• Derecho Penal
+• Derecho Tributario
+
+¿Te gustaría ver los consultores disponibles o prefieres describir tu caso primero?`,
+          isUser: false,
+          timestamp: new Date(),
+          messageType: 'text'
+        }
+      ]);
+    } else {
+      setMessages([
+        {
+          id: 1,
+          text: `Bienvenido a ${tool.name}. ${tool.description}. ¿En qué puedo ayudarte?`,
+          isUser: false,
+          timestamp: new Date()
+        }
+      ]);
+    }
   };
 
   const closeChat = () => {
@@ -150,6 +240,8 @@ function App() {
     setInputMessage('');
     setIsSending(false);
     setUploadedFile(null);
+    setShowConsultants(false);
+    setSelectedConsultant(null);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,6 +251,44 @@ function App() {
     }
   };
 
+  const handleQuickAction = async (action: string) => {
+    setIsSending(true);
+
+    const actionMessages = {
+      'analyze': 'Por favor, sube un documento para análisis completo con identificación de riesgos y recomendaciones.',
+      'template': '¿Qué tipo de documento necesitas? Puedo generar contratos, cartas legales, promesas de compraventa, etc.',
+      'scenario': 'Describe la situación legal que quieres simular y te mostraré posibles consecuencias según la normativa.',
+      'normative': '¿Qué normativa específica necesitas consultar? Puedo buscar leyes, artículos y regulaciones vigentes.',
+      'agenda': 'Te ayudo a programar recordatorios legales o agendar una consulta. ¿Qué necesitas programar?',
+      'escalate': 'Te voy a conectar con nuestros consultores humanos especializados.'
+    };
+
+    const userMessage: ChatMessage = {
+      id: messages.length + 1,
+      text: `Acción rápida: ${action}`,
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    const botResponse: ChatMessage = {
+      id: messages.length + 2,
+      text: actionMessages[action as keyof typeof actionMessages] || 'Procesando solicitud...',
+      isUser: false,
+      timestamp: new Date(),
+      messageType: action as any
+    };
+
+    setMessages(prev => [...prev, userMessage, botResponse]);
+
+    if (action === 'escalate') {
+      setTimeout(() => {
+        setShowConsultants(true);
+      }, 1000);
+    }
+
+    setIsSending(false);
+  };
+
   const sendMessage = async () => {
     if (!inputMessage.trim() && !uploadedFile) return;
 
@@ -166,7 +296,7 @@ function App() {
 
     const userMessage: ChatMessage = {
       id: messages.length + 1,
-      text: inputMessage || `Archivo: ${uploadedFile?.name}`,
+      text: inputMessage || `📎 Archivo: ${uploadedFile?.name}`,
       isUser: true,
       timestamp: new Date(),
       fileAttachment: uploadedFile?.name
@@ -174,7 +304,7 @@ function App() {
 
     const loadingMessage: ChatMessage = {
       id: messages.length + 2,
-      text: "Procesando con IA especializada...",
+      text: "🤖 Procesando con IA especializada...",
       isUser: false,
       timestamp: new Date(),
       isLoading: true
@@ -203,9 +333,28 @@ function App() {
 
       const responseText = await response.text();
       
+      // Enhanced response formatting for Chat Legal 24/7
+      let formattedResponse = responseText || "✅ Análisis completado exitosamente.";
+      
+      if (selectedTool?.id === 1) { // Chat Legal 24/7
+        formattedResponse = `🤖 **Análisis UMBRA Completado**
+
+${responseText || `He procesado tu consulta con éxito. 
+
+**Recomendaciones:**
+• Revisa los puntos destacados
+• Considera las implicaciones legales mencionadas
+• Si necesitas más detalles, puedo profundizar en cualquier aspecto
+
+¿Hay algo específico en lo que quieras que me enfoque más?`}
+
+---
+💡 **Acciones disponibles:** Analizar documento | Generar plantilla | Consultar normativa | Agendar cita`;
+      }
+
       const botResponse: ChatMessage = {
         id: messages.length + 2,
-        text: responseText || "Análisis completado exitosamente.",
+        text: formattedResponse,
         isUser: false,
         timestamp: new Date()
       };
@@ -217,7 +366,7 @@ function App() {
     } catch (error) {
       const errorResponse: ChatMessage = {
         id: messages.length + 2,
-        text: "Error en la conexión. Intenta nuevamente.",
+        text: "❌ Error en la conexión. Por favor, intenta nuevamente o contacta a un consultor humano.",
         isUser: false,
         timestamp: new Date()
       };
@@ -234,6 +383,34 @@ function App() {
     if (e.key === 'Enter' && !isSending) {
       sendMessage();
     }
+  };
+
+  const selectConsultant = (consultant: Consultant) => {
+    setSelectedConsultant(consultant);
+    setShowConsultants(false);
+    
+    const escalationMessage: ChatMessage = {
+      id: messages.length + 1,
+      text: `✅ **Conectado con ${consultant.name}**
+
+**Especialidad:** ${consultant.specialty}
+**Experiencia:** ${consultant.experience}
+**Rating:** ${'⭐'.repeat(Math.floor(consultant.rating))} ${consultant.rating}/5
+
+Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te contactará en breve.
+
+**Próximos pasos:**
+1. Recibirás una confirmación por email
+2. El consultor te contactará en 15-30 minutos
+3. Podrás agendar una videollamada si es necesario
+
+¿Hay información adicional que quieras compartir sobre tu caso?`,
+      isUser: false,
+      timestamp: new Date(),
+      messageType: 'text'
+    };
+
+    setMessages(prev => [...prev, escalationMessage]);
   };
 
   // Authentication Screen
@@ -253,10 +430,10 @@ function App() {
             <div className="mb-8">
               <Loader2 className="w-16 h-16 text-yellow-400 animate-spin mx-auto mb-4" />
               <h2 className="text-2xl font-light text-yellow-400 tracking-[0.3em] mb-2">
-                INICIALIZANDO
+                INICIALIZANDO UMBRA
               </h2>
               <p className="text-gray-400 text-sm tracking-wider">
-                Cargando núcleo de alto impacto...
+                Cargando asistente legal avanzado...
               </p>
             </div>
             <div className="w-64 h-1 bg-gray-800 rounded-full mx-auto overflow-hidden">
@@ -271,7 +448,7 @@ function App() {
                 UMBRA
               </h1>
               <p className="text-gray-400 text-sm tracking-wider uppercase">
-                Core Legal Intelligence
+                Advanced Legal Intelligence
               </p>
             </div>
 
@@ -288,7 +465,7 @@ function App() {
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                     className="w-full bg-gray-900/50 text-yellow-100 pl-10 pr-4 py-3 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none transition-colors"
-                    placeholder="Ingresa la contraseña"
+                    placeholder="Ingresa UMBRA"
                   />
                 </div>
                 {authError && (
@@ -302,7 +479,7 @@ function App() {
                 onClick={handleLogin}
                 className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
               >
-                ACCEDER AL NÚCLEO
+                ACCEDER AL SISTEMA
               </button>
             </div>
           </div>
@@ -311,61 +488,173 @@ function App() {
     );
   }
 
-  // Optimized Chat Interface
-  const renderChatInterface = () => {
+  // Advanced Chat Interface
+  const renderAdvancedChatInterface = () => {
     if (!selectedTool) return null;
+
+    const isAdvancedChat = selectedTool.id === 1; // Chat Legal 24/7
+    const isConsultation = selectedTool.id === 2; // Consultoría
 
     return (
       <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-2xl h-[65vh] flex flex-col border border-yellow-600/20 animate-slideUp">
+        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-4xl h-[75vh] flex flex-col border border-yellow-600/20 animate-slideUp">
           
-          {/* Optimized Header */}
+          {/* Enhanced Header */}
           <div className="flex items-center justify-between p-4 border-b border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
             <div className="flex items-center space-x-3">
-              <selectedTool.icon className="w-5 h-5 text-yellow-400" />
+              <div className="p-2 bg-gradient-to-br from-yellow-600/20 to-yellow-700/30 rounded-lg">
+                <selectedTool.icon className="w-6 h-6 text-yellow-400" />
+              </div>
               <div>
-                <h3 className="font-light text-yellow-400 text-lg tracking-wide">
+                <h3 className="font-light text-yellow-400 text-xl tracking-wide">
                   {selectedTool.name}
                 </h3>
                 <p className="text-xs text-gray-500 uppercase tracking-wider">{selectedTool.category}</p>
               </div>
             </div>
-            <button
-              onClick={closeChat}
-              className="text-gray-400 hover:text-yellow-400 transition-colors duration-200 hover:rotate-90 transform"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {isAdvancedChat && (
+                <div className="flex items-center space-x-1 text-xs text-green-400">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>IA Activa</span>
+                </div>
+              )}
+              <button
+                onClick={closeChat}
+                className="text-gray-400 hover:text-yellow-400 transition-colors duration-200 hover:rotate-90 transform"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Optimized Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-black/50 to-gray-900/50">
+          {/* Quick Actions for Advanced Chat */}
+          {isAdvancedChat && (
+            <div className="p-3 border-b border-yellow-600/10 bg-gradient-to-r from-gray-900/40 to-black/60">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleQuickAction('analyze')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <FileText className="w-3 h-3" />
+                  <span>Analizar Documento</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAction('template')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-green-600/20 hover:bg-green-600/30 text-green-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Generar Plantilla</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAction('scenario')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Zap className="w-3 h-3" />
+                  <span>Simular Escenario</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAction('normative')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  <span>Buscar Normativa</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAction('agenda')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Calendar className="w-3 h-3" />
+                  <span>Agendar</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAction('escalate')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Users className="w-3 h-3" />
+                  <span>Consultor Humano</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Consultants Panel */}
+          {showConsultants && (
+            <div className="p-4 border-b border-yellow-600/10 bg-gradient-to-r from-gray-900/60 to-black/80">
+              <h4 className="text-yellow-400 text-sm font-medium mb-3">Consultores Disponibles:</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {availableConsultants.map((consultant) => (
+                  <div
+                    key={consultant.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      consultant.available
+                        ? 'border-green-600/30 bg-green-900/20 hover:bg-green-900/30 hover:scale-105'
+                        : 'border-gray-600/30 bg-gray-900/20 opacity-50 cursor-not-allowed'
+                    }`}
+                    onClick={() => consultant.available && selectConsultant(consultant)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-full flex items-center justify-center text-black font-bold text-sm">
+                        {consultant.avatar}
+                      </div>
+                      <div className="flex-1">
+                        <h5 className="text-white text-sm font-medium">{consultant.name}</h5>
+                        <p className="text-gray-400 text-xs">{consultant.specialty}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="flex text-yellow-400 text-xs">
+                            {'⭐'.repeat(Math.floor(consultant.rating))}
+                          </div>
+                          <span className="text-gray-500 text-xs">{consultant.experience}</span>
+                        </div>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full ${consultant.available ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black/50 to-gray-900/50">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-messageSlide`}
               >
-                <div
-                  className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
-                    message.isUser
-                      ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-black font-medium'
-                      : `bg-gray-800/60 text-gray-200 border border-yellow-600/20 ${
-                          message.isLoading ? 'animate-pulse' : ''
-                        }`
-                  }`}
-                >
-                  {message.fileAttachment && (
-                    <div className="flex items-center mb-1 text-xs opacity-75">
-                      <FileText className="w-3 h-3 mr-1" />
-                      {message.fileAttachment}
+                <div className="flex items-start space-x-2 max-w-2xl">
+                  {!message.isUser && (
+                    <div className="w-8 h-8 bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      {isAdvancedChat ? <Bot className="w-4 h-4 text-black" /> : <selectedTool.icon className="w-4 h-4 text-black" />}
                     </div>
                   )}
-                  {message.text}
-                  {message.isLoading && (
-                    <div className="flex space-x-1 mt-1">
-                      <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce"></div>
-                      <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <div
+                    className={`px-4 py-3 rounded-lg text-sm ${
+                      message.isUser
+                        ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-black font-medium'
+                        : `bg-gray-800/60 text-gray-200 border border-yellow-600/20 ${
+                            message.isLoading ? 'animate-pulse' : ''
+                          }`
+                    }`}
+                  >
+                    {message.fileAttachment && (
+                      <div className="flex items-center mb-2 text-xs opacity-75">
+                        <FileText className="w-3 h-3 mr-1" />
+                        {message.fileAttachment}
+                      </div>
+                    )}
+                    <div className="whitespace-pre-wrap">{message.text}</div>
+                    {message.isLoading && (
+                      <div className="flex space-x-1 mt-2">
+                        <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce"></div>
+                        <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    )}
+                  </div>
+                  {message.isUser && (
+                    <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <User className="w-4 h-4 text-white" />
                     </div>
                   )}
                 </div>
@@ -373,8 +662,20 @@ function App() {
             ))}
           </div>
 
-          {/* Optimized Input */}
+          {/* Enhanced Input */}
           <div className="p-4 border-t border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
+            {uploadedFile && (
+              <div className="mb-2 flex items-center space-x-2 text-xs text-yellow-300 bg-yellow-600/10 px-3 py-2 rounded-lg">
+                <FileText className="w-4 h-4" />
+                <span>{uploadedFile.name}</span>
+                <button
+                  onClick={() => setUploadedFile(null)}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -382,13 +683,22 @@ function App() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={isSending}
-                placeholder="Escribe tu consulta..."
-                className="flex-1 bg-black/40 text-yellow-100 px-3 py-2 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none disabled:opacity-50 text-sm placeholder-gray-500"
+                placeholder={isAdvancedChat ? "Describe tu consulta legal o sube un documento..." : "Escribe tu consulta..."}
+                className="flex-1 bg-black/40 text-yellow-100 px-4 py-3 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none disabled:opacity-50 text-sm placeholder-gray-500"
               />
+              <label className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-3 rounded-lg transition-all duration-200 cursor-pointer hover:scale-105">
+                <Upload className="w-4 h-4" />
+                <input
+                  type="file"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt"
+                />
+              </label>
               <button
                 onClick={sendMessage}
                 disabled={isSending || (!inputMessage.trim() && !uploadedFile)}
-                className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black px-3 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 font-medium transform hover:scale-105"
+                className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 font-medium transform hover:scale-105"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -407,7 +717,7 @@ function App() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-400/3 rounded-full blur-3xl animate-float-delayed"></div>
       </div>
 
-      {/* Optimized Header */}
+      {/* Enhanced Header */}
       <header className="relative py-8 px-8 text-center border-b border-yellow-600/20 animate-fadeInDown">
         <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/5 to-transparent"></div>
         <div className="relative">
@@ -415,13 +725,13 @@ function App() {
             UMBRA
           </h1>
           <p className="text-base text-gray-400 font-light tracking-[0.2em] uppercase animate-fadeIn">
-            Core Legal Intelligence • 8 Funciones Esenciales
+            Advanced Legal Intelligence • Asistente Legal 24/7 + Consultoría Especializada
           </p>
           <div className="mt-3 w-24 h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent mx-auto animate-expand"></div>
         </div>
       </header>
 
-      {/* Optimized Core Functions Dashboard */}
+      {/* Core Functions Dashboard */}
       <main className="px-6 py-8 relative z-10">
         <div className="max-w-6xl mx-auto">
           {/* Priority Grid - 2x4 Layout for Core Functions */}
@@ -429,24 +739,54 @@ function App() {
             {coreTools.map((tool, index) => (
               <div
                 key={tool.id}
-                className="group relative bg-gradient-to-br from-gray-900/60 to-black/80 backdrop-blur-sm rounded-xl p-6 border border-yellow-600/30 hover:border-yellow-400/80 transition-all duration-300 cursor-pointer transform hover:scale-105 hover:-translate-y-2 animate-cardSlideUp shadow-lg hover:shadow-yellow-600/20"
+                className={`group relative bg-gradient-to-br from-gray-900/60 to-black/80 backdrop-blur-sm rounded-xl p-6 border transition-all duration-300 cursor-pointer transform hover:scale-105 hover:-translate-y-2 animate-cardSlideUp shadow-lg ${
+                  tool.id === 1 
+                    ? 'border-yellow-400/60 hover:border-yellow-300/80 shadow-yellow-600/20' 
+                    : tool.id === 2
+                    ? 'border-blue-400/60 hover:border-blue-300/80 shadow-blue-600/20'
+                    : 'border-yellow-600/30 hover:border-yellow-400/80 hover:shadow-yellow-600/20'
+                }`}
                 onClick={() => openChat(tool)}
                 style={{
                   animationDelay: `${index * 0.1}s`
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/0 to-yellow-600/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl ${
+                  tool.id === 1 
+                    ? 'bg-gradient-to-br from-yellow-600/0 to-yellow-600/20' 
+                    : tool.id === 2
+                    ? 'bg-gradient-to-br from-blue-600/0 to-blue-600/15'
+                    : 'bg-gradient-to-br from-yellow-600/0 to-yellow-600/15'
+                }`}></div>
                 
                 <div className="relative z-10 text-center">
-                  {/* Priority Icon */}
+                  {/* Enhanced Icon for Advanced Tools */}
                   <div className="mb-4 flex justify-center">
-                    <div className="p-3 bg-gradient-to-br from-yellow-600/20 to-yellow-700/30 rounded-lg group-hover:from-yellow-500/30 group-hover:to-yellow-600/40 transition-all duration-300">
-                      <tool.icon className="w-8 h-8 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300" />
+                    <div className={`p-3 rounded-lg group-hover:scale-110 transition-all duration-300 ${
+                      tool.id === 1 
+                        ? 'bg-gradient-to-br from-yellow-500/30 to-yellow-600/40 group-hover:from-yellow-400/40 group-hover:to-yellow-500/50' 
+                        : tool.id === 2
+                        ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/40 group-hover:from-blue-400/40 group-hover:to-blue-500/50'
+                        : 'bg-gradient-to-br from-yellow-600/20 to-yellow-700/30 group-hover:from-yellow-500/30 group-hover:to-yellow-600/40'
+                    }`}>
+                      <tool.icon className={`w-8 h-8 transition-colors duration-300 ${
+                        tool.id === 1 
+                          ? 'text-yellow-300 group-hover:text-yellow-200' 
+                          : tool.id === 2
+                          ? 'text-blue-300 group-hover:text-blue-200'
+                          : 'text-yellow-400 group-hover:text-yellow-300'
+                      }`} />
                     </div>
                   </div>
                   
                   {/* Tool Name */}
-                  <h3 className="text-sm font-medium text-yellow-100 mb-2 tracking-wide group-hover:text-yellow-300 transition-colors duration-300 leading-tight">
+                  <h3 className={`text-sm font-medium mb-2 tracking-wide transition-colors duration-300 leading-tight ${
+                    tool.id === 1 
+                      ? 'text-yellow-200 group-hover:text-yellow-100' 
+                      : tool.id === 2
+                      ? 'text-blue-200 group-hover:text-blue-100'
+                      : 'text-yellow-100 group-hover:text-yellow-300'
+                  }`}>
                     {tool.name}
                   </h3>
                   
@@ -455,51 +795,87 @@ function App() {
                     {tool.description}
                   </p>
                   
-                  {/* Category Badge */}
-                  <div className="inline-block px-2 py-1 bg-yellow-600/20 rounded-full">
-                    <span className="text-[10px] text-yellow-300 uppercase tracking-wider font-medium">
+                  {/* Enhanced Category Badge */}
+                  <div className={`inline-block px-2 py-1 rounded-full ${
+                    tool.id === 1 
+                      ? 'bg-yellow-500/20' 
+                      : tool.id === 2
+                      ? 'bg-blue-500/20'
+                      : 'bg-yellow-600/20'
+                  }`}>
+                    <span className={`text-[10px] uppercase tracking-wider font-medium ${
+                      tool.id === 1 
+                        ? 'text-yellow-200' 
+                        : tool.id === 2
+                        ? 'text-blue-200'
+                        : 'text-yellow-300'
+                    }`}>
                       {tool.category}
                     </span>
                   </div>
                   
                   {/* Priority Indicator */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
+                    <div className={`w-2 h-2 rounded-full animate-ping ${
+                      tool.id === 1 
+                        ? 'bg-yellow-300' 
+                        : tool.id === 2
+                        ? 'bg-blue-300'
+                        : 'bg-yellow-400'
+                    }`}></div>
                   </div>
+
+                  {/* Special Badge for Advanced Tools */}
+                  {(tool.id === 1 || tool.id === 2) && (
+                    <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className={`px-2 py-1 rounded-full text-[8px] font-bold ${
+                        tool.id === 1 
+                          ? 'bg-yellow-400 text-black' 
+                          : 'bg-blue-400 text-black'
+                      }`}>
+                        {tool.id === 1 ? 'IA+' : 'EXPERT'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Core Stats */}
+          {/* Enhanced Core Stats */}
           <div className="mt-8 text-center">
-            <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-gray-900/40 to-black/60 backdrop-blur-sm rounded-lg px-6 py-3 border border-yellow-600/20">
+            <div className="inline-flex items-center space-x-6 bg-gradient-to-r from-gray-900/40 to-black/60 backdrop-blur-sm rounded-lg px-8 py-4 border border-yellow-600/20">
               <div className="text-center">
-                <div className="text-lg font-light text-yellow-400">8</div>
+                <div className="text-xl font-light text-yellow-400">8</div>
                 <div className="text-xs text-gray-500 uppercase tracking-wider">Funciones Core</div>
               </div>
-              <div className="w-px h-8 bg-yellow-600/30"></div>
+              <div className="w-px h-10 bg-yellow-600/30"></div>
               <div className="text-center">
-                <div className="text-lg font-light text-yellow-400">80%</div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider">Impacto</div>
+                <div className="text-xl font-light text-yellow-400">24/7</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">IA Disponible</div>
               </div>
-              <div className="w-px h-8 bg-yellow-600/30"></div>
+              <div className="w-px h-10 bg-yellow-600/30"></div>
               <div className="text-center">
-                <div className="text-lg font-light text-yellow-400">24/7</div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider">Disponible</div>
+                <div className="text-xl font-light text-blue-400">Expert</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Consultores</div>
+              </div>
+              <div className="w-px h-10 bg-yellow-600/30"></div>
+              <div className="text-center">
+                <div className="text-xl font-light text-green-400">80%</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Impacto</div>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Chat Interface */}
-      {renderChatInterface()}
+      {/* Advanced Chat Interface */}
+      {renderAdvancedChatInterface()}
 
-      {/* Optimized Footer */}
+      {/* Enhanced Footer */}
       <footer className="border-t border-yellow-600/10 py-4 text-center bg-gradient-to-t from-gray-900/30 to-transparent relative z-10">
         <p className="text-gray-600 text-xs font-light tracking-[0.15em] uppercase">
-          © 2025 UMBRA • Optimized Legal Core • High Impact Functions Only
+          © 2025 UMBRA • Advanced Legal Intelligence • IA + Human Expertise
         </p>
       </footer>
 
