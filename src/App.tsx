@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2 } from 'lucide-react';
+import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2, MessageCircle, FileCheck, Edit3, AlertCircle, PenTool, Calendar, BookOpen, TrendingUp } from 'lucide-react';
 
 interface Tool {
   id: number;
   name: string;
   category: string;
+  description: string;
   webhookUrl: string;
   chatType: 'chat' | 'document' | 'analysis' | 'research' | 'compliance';
+  icon: React.ComponentType<any>;
+  priority: number;
 }
 
 interface ChatMessage {
@@ -18,146 +21,87 @@ interface ChatMessage {
   fileAttachment?: string;
 }
 
-const tools: Tool[] = [
+// CORE 8 FUNCTIONS - High Impact Tools Only
+const coreTools: Tool[] = [
   {
     id: 1,
     name: "Chat Legal 24/7",
     category: "Consultoría",
+    description: "Asesoría legal instantánea disponible las 24 horas",
     webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Chat%20Legal%2024/7",
-    chatType: 'chat'
+    chatType: 'chat',
+    icon: MessageCircle,
+    priority: 1
   },
   {
     id: 2,
     name: "Revisión Rápida",
     category: "Documentos",
+    description: "Análisis inmediato de documentos legales",
     webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook/Revisi%C3%B3n%20R%C3%A1pida%20de%20Documentos",
-    chatType: 'document'
+    chatType: 'document',
+    icon: FileCheck,
+    priority: 2
   },
   {
     id: 3,
-    name: "Informes Legales",
-    category: "Análisis",
-    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Generaci%C3%B3n%20de%20Informes%20Legales",
-    chatType: 'analysis'
+    name: "Corrección de Contratos",
+    category: "Automatización",
+    description: "Corrección automática e inteligente de contratos",
+    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/correccion_automatica_de_contratos",
+    chatType: 'document',
+    icon: Edit3,
+    priority: 3
   },
   {
     id: 4,
-    name: "Simulador Legal",
-    category: "Investigación",
-    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Simulador%20de%20Problemas%20Legales", 
-    chatType: 'research'
+    name: "Análisis de Cláusulas Riesgosas",
+    category: "Detección",
+    description: "Identificación automática de cláusulas de alto riesgo",
+    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/deteccion_de_clausulas_riesgosas",
+    chatType: 'analysis',
+    icon: AlertCircle,
+    priority: 4
   },
   {
     id: 5,
-    name: "Normativas Locales",
-    category: "Búsqueda",
-    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Buscador%20de%20Normativas%20Locales",
-    chatType: 'research'
+    name: "Firmas Electrónicas",
+    category: "Análisis",
+    description: "Validación y análisis de firmas digitales",
+    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/analisis_de_firmas_electronicas",
+    chatType: 'analysis',
+    icon: PenTool,
+    priority: 5
   },
   {
     id: 6,
-    name: "Promesas Compraventa",
-    category: "Contratos",
-    webhookUrl: "https://39ac2851022c.ngrok-free.app/webhook-test/Generador de Promesas de Compraventa",
-    chatType: 'document'
+    name: "Agenda Legal + Recordatorio de Firmas",
+    category: "Automatización",
+    description: "Gestión automatizada de agenda y recordatorios",
+    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/agenda_legal_automatica",
+    chatType: 'compliance',
+    icon: Calendar,
+    priority: 6
   },
   {
     id: 7,
-    name: "Cláusulas Riesgosas",
-    category: "Detección",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/deteccion_de_clausulas_riesgosas",
-    chatType: 'analysis'
+    name: "Normativas Locales",
+    category: "Búsqueda",
+    description: "Búsqueda especializada en normativas y regulaciones",
+    webhookUrl: "https://8f7056be6e10.ngrok-free.app/webhook-test/Buscador%20de%20Normativas%20Locales",
+    chatType: 'research',
+    icon: BookOpen,
+    priority: 7
   },
   {
     id: 8,
-    name: "Arriendos y Cesiones",
-    category: "Revisión",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/revision_de_arriendos_y_cesiones",
-    chatType: 'document'
-  },
-  {
-    id: 9,
-    name: "Corrección Contratos",
-    category: "Automatización",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/correccion_automatica_de_contratos",
-    chatType: 'document'
-  },
-  {
-    id: 10,
-    name: "Firmas Electrónicas",
-    category: "Análisis",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/analisis_de_firmas_electronicas",
-    chatType: 'analysis'
-  },
-  {
-    id: 11,
-    name: "Cumplimiento Legal",
-    category: "Verificación",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/verificador_de_cumplimiento_legal",
-    chatType: 'compliance'
-  },
-  {
-    id: 12,
-    name: "Revisión Express",
-    category: "Documentos",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/revision_rapida_de_documentos",
-    chatType: 'document'
-  },
-  {
-    id: 13,
-    name: "Informes Ejecutivos",
-    category: "Reportes",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/generacion_de_informes_legales",
-    chatType: 'analysis'
-  },
-  {
-    id: 14,
-    name: "Permisos Pendientes",
-    category: "Evaluación",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/evaluacion_de_permisos_pendientes",
-    chatType: 'compliance'
-  },
-  {
-    id: 15,
-    name: "Riesgo Inversionistas",
+    name: "Evaluación de Riesgo para Inversionistas",
     category: "Informes",
+    description: "Análisis de riesgo especializado para inversiones",
     webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/informe_de_riesgo_para_inversionistas",
-    chatType: 'analysis'
-  },
-  {
-    id: 16,
-    name: "Seguimiento Promesas",
-    category: "Automatización",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/seguimiento_automatico_de_promesas",
-    chatType: 'document'
-  },
-  {
-    id: 17,
-    name: "Revisión Integral",
-    category: "Documentos",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/revision_rapida_de_documentos",
-    chatType: 'document'
-  },
-  {
-    id: 18,
-    name: "Agenda Legal",
-    category: "Automatización",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/agenda_legal_automatica",
-    chatType: 'compliance'
-  },
-  {
-    id: 19,
-    name: "Notificaciones Legales",
-    category: "Automatización",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/automatizacion_de_notificaciones_legales",
-    chatType: 'compliance'
-  },
-  {
-    id: 20,
-    name: "Recordatorio Firmas",
-    category: "Seguimiento",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/recordatorio_de_firmas_pendientes",
-    chatType: 'compliance'
+    chatType: 'analysis',
+    icon: TrendingUp,
+    priority: 8
   }
 ];
 
@@ -181,7 +125,7 @@ function App() {
     setIsLoading(true);
     setAuthError('');
 
-    // Simular carga de 5 segundos
+    // 5 second loading simulation
     setTimeout(() => {
       setIsAuthenticated(true);
       setIsLoading(false);
@@ -193,7 +137,7 @@ function App() {
     setMessages([
       {
         id: 1,
-        text: `Bienvenido a ${tool.name}. ¿En qué puedo ayudarte?`,
+        text: `Bienvenido a ${tool.name}. ${tool.description}. ¿En qué puedo ayudarte?`,
         isUser: false,
         timestamp: new Date()
       }
@@ -230,7 +174,7 @@ function App() {
 
     const loadingMessage: ChatMessage = {
       id: messages.length + 2,
-      text: "Procesando...",
+      text: "Procesando con IA especializada...",
       isUser: false,
       timestamp: new Date(),
       isLoading: true
@@ -261,7 +205,7 @@ function App() {
       
       const botResponse: ChatMessage = {
         id: messages.length + 2,
-        text: responseText || "Solicitud procesada exitosamente.",
+        text: responseText || "Análisis completado exitosamente.",
         isUser: false,
         timestamp: new Date()
       };
@@ -292,7 +236,7 @@ function App() {
     }
   };
 
-  // Pantalla de autenticación
+  // Authentication Screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
@@ -304,15 +248,15 @@ function App() {
         </div>
 
         {isLoading ? (
-          // Pantalla de carga
+          // Loading Screen
           <div className="relative z-10 text-center">
             <div className="mb-8">
               <Loader2 className="w-16 h-16 text-yellow-400 animate-spin mx-auto mb-4" />
               <h2 className="text-2xl font-light text-yellow-400 tracking-[0.3em] mb-2">
-                CARGANDO
+                INICIALIZANDO
               </h2>
               <p className="text-gray-400 text-sm tracking-wider">
-                Inicializando sistema...
+                Cargando núcleo de alto impacto...
               </p>
             </div>
             <div className="w-64 h-1 bg-gray-800 rounded-full mx-auto overflow-hidden">
@@ -320,14 +264,14 @@ function App() {
             </div>
           </div>
         ) : (
-          // Pantalla de login
+          // Login Screen
           <div className="relative z-10 bg-black/80 backdrop-blur-sm border border-yellow-600/30 rounded-lg p-8 w-full max-w-md">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-thin tracking-[0.3em] mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
                 UMBRA
               </h1>
               <p className="text-gray-400 text-sm tracking-wider uppercase">
-                Acceso Restringido
+                Core Legal Intelligence
               </p>
             </div>
 
@@ -358,7 +302,7 @@ function App() {
                 onClick={handleLogin}
                 className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
               >
-                ACCEDER
+                ACCEDER AL NÚCLEO
               </button>
             </div>
           </div>
@@ -367,21 +311,24 @@ function App() {
     );
   }
 
-  // Chat interface más pequeño y minimalista
+  // Optimized Chat Interface
   const renderChatInterface = () => {
     if (!selectedTool) return null;
 
     return (
       <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-2xl h-[70vh] flex flex-col border border-yellow-600/20 animate-slideUp">
+        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-2xl h-[65vh] flex flex-col border border-yellow-600/20 animate-slideUp">
           
-          {/* Header más compacto */}
+          {/* Optimized Header */}
           <div className="flex items-center justify-between p-4 border-b border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
-            <div>
-              <h3 className="font-light text-yellow-400 text-lg tracking-wide">
-                {selectedTool.name}
-              </h3>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">{selectedTool.category}</p>
+            <div className="flex items-center space-x-3">
+              <selectedTool.icon className="w-5 h-5 text-yellow-400" />
+              <div>
+                <h3 className="font-light text-yellow-400 text-lg tracking-wide">
+                  {selectedTool.name}
+                </h3>
+                <p className="text-xs text-gray-500 uppercase tracking-wider">{selectedTool.category}</p>
+              </div>
             </div>
             <button
               onClick={closeChat}
@@ -391,7 +338,7 @@ function App() {
             </button>
           </div>
 
-          {/* Messages más compactos */}
+          {/* Optimized Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-black/50 to-gray-900/50">
             {messages.map((message) => (
               <div
@@ -426,7 +373,7 @@ function App() {
             ))}
           </div>
 
-          {/* Input más compacto */}
+          {/* Optimized Input */}
           <div className="p-4 border-t border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
             <div className="flex space-x-2">
               <input
@@ -435,7 +382,7 @@ function App() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={isSending}
-                placeholder="Escribe aquí..."
+                placeholder="Escribe tu consulta..."
                 className="flex-1 bg-black/40 text-yellow-100 px-3 py-2 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none disabled:opacity-50 text-sm placeholder-gray-500"
               />
               <button
@@ -454,56 +401,94 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-yellow-100 overflow-hidden">
-      {/* Animated background */}
+      {/* Optimized animated background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-yellow-600/3 rounded-full blur-3xl animate-float"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-400/3 rounded-full blur-3xl animate-float-delayed"></div>
       </div>
 
-      {/* Header más dinámico */}
-      <header className="relative py-12 px-8 text-center border-b border-yellow-600/20 animate-fadeInDown">
+      {/* Optimized Header */}
+      <header className="relative py-8 px-8 text-center border-b border-yellow-600/20 animate-fadeInDown">
         <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/5 to-transparent"></div>
         <div className="relative">
-          <h1 className="text-6xl font-thin tracking-[0.3em] mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 animate-glow">
+          <h1 className="text-5xl font-thin tracking-[0.3em] mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 animate-glow">
             UMBRA
           </h1>
-          <p className="text-lg text-gray-400 font-light tracking-[0.2em] uppercase animate-fadeIn">
-            Legal Intelligence System
+          <p className="text-base text-gray-400 font-light tracking-[0.2em] uppercase animate-fadeIn">
+            Core Legal Intelligence • 8 Funciones Esenciales
           </p>
-          <div className="mt-4 w-24 h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent mx-auto animate-expand"></div>
+          <div className="mt-3 w-24 h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent mx-auto animate-expand"></div>
         </div>
       </header>
 
-      {/* Grid más dinámico y compacto */}
+      {/* Optimized Core Functions Dashboard */}
       <main className="px-6 py-8 relative z-10">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3">
-            {tools.map((tool, index) => (
+        <div className="max-w-6xl mx-auto">
+          {/* Priority Grid - 2x4 Layout for Core Functions */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {coreTools.map((tool, index) => (
               <div
                 key={tool.id}
-                className="group relative bg-gradient-to-br from-gray-900/40 to-black/60 backdrop-blur-sm rounded-lg p-3 border border-yellow-600/20 hover:border-yellow-400/60 transition-all duration-300 cursor-pointer transform hover:scale-110 hover:-translate-y-1 animate-cardSlideUp"
+                className="group relative bg-gradient-to-br from-gray-900/60 to-black/80 backdrop-blur-sm rounded-xl p-6 border border-yellow-600/30 hover:border-yellow-400/80 transition-all duration-300 cursor-pointer transform hover:scale-105 hover:-translate-y-2 animate-cardSlideUp shadow-lg hover:shadow-yellow-600/20"
                 onClick={() => openChat(tool)}
                 style={{
-                  animationDelay: `${index * 0.05}s`
+                  animationDelay: `${index * 0.1}s`
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/0 to-yellow-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-600/0 to-yellow-600/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
                 
                 <div className="relative z-10 text-center">
-                  <h3 className="text-xs font-light text-yellow-100 mb-1 tracking-wide group-hover:text-yellow-300 transition-colors duration-300 leading-tight">
+                  {/* Priority Icon */}
+                  <div className="mb-4 flex justify-center">
+                    <div className="p-3 bg-gradient-to-br from-yellow-600/20 to-yellow-700/30 rounded-lg group-hover:from-yellow-500/30 group-hover:to-yellow-600/40 transition-all duration-300">
+                      <tool.icon className="w-8 h-8 text-yellow-400 group-hover:text-yellow-300 transition-colors duration-300" />
+                    </div>
+                  </div>
+                  
+                  {/* Tool Name */}
+                  <h3 className="text-sm font-medium text-yellow-100 mb-2 tracking-wide group-hover:text-yellow-300 transition-colors duration-300 leading-tight">
                     {tool.name}
                   </h3>
                   
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium group-hover:text-yellow-600 transition-colors duration-300">
-                    {tool.category}
+                  {/* Description */}
+                  <p className="text-xs text-gray-400 mb-3 group-hover:text-gray-300 transition-colors duration-300 leading-relaxed">
+                    {tool.description}
+                  </p>
+                  
+                  {/* Category Badge */}
+                  <div className="inline-block px-2 py-1 bg-yellow-600/20 rounded-full">
+                    <span className="text-[10px] text-yellow-300 uppercase tracking-wider font-medium">
+                      {tool.category}
+                    </span>
                   </div>
                   
-                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
+                  {/* Priority Indicator */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Core Stats */}
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-gray-900/40 to-black/60 backdrop-blur-sm rounded-lg px-6 py-3 border border-yellow-600/20">
+              <div className="text-center">
+                <div className="text-lg font-light text-yellow-400">8</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Funciones Core</div>
+              </div>
+              <div className="w-px h-8 bg-yellow-600/30"></div>
+              <div className="text-center">
+                <div className="text-lg font-light text-yellow-400">80%</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Impacto</div>
+              </div>
+              <div className="w-px h-8 bg-yellow-600/30"></div>
+              <div className="text-center">
+                <div className="text-lg font-light text-yellow-400">24/7</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Disponible</div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -511,10 +496,10 @@ function App() {
       {/* Chat Interface */}
       {renderChatInterface()}
 
-      {/* Footer más sutil */}
-      <footer className="border-t border-yellow-600/10 py-6 text-center bg-gradient-to-t from-gray-900/30 to-transparent relative z-10">
+      {/* Optimized Footer */}
+      <footer className="border-t border-yellow-600/10 py-4 text-center bg-gradient-to-t from-gray-900/30 to-transparent relative z-10">
         <p className="text-gray-600 text-xs font-light tracking-[0.15em] uppercase">
-          © 2025 UMBRA • Classified Legal Technology
+          © 2025 UMBRA • Optimized Legal Core • High Impact Functions Only
         </p>
       </footer>
 
