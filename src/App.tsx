@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2, MessageCircle, FileCheck, Edit3, AlertCircle, PenTool, Calendar, BookOpen, TrendingUp, Bot, User, Clock, CheckCircle, FileUp, Zap, Users, Phone, Video, Mail, Star, Award, Briefcase } from 'lucide-react';
+import { X, Send, Upload, FileText, Download, Eye, Search, Shield, AlertTriangle, Lock, Loader2, MessageCircle, FileCheck, Edit3, AlertCircle, PenTool, Calendar, BookOpen, TrendingUp, Bot, User, Clock, CheckCircle, FileUp, Zap, Users, Phone, Video, Mail, Star, Award, Briefcase, Database, BarChart3, FileSearch, Building2, UserCheck } from 'lucide-react';
 
 interface Tool {
   id: number;
@@ -7,7 +7,7 @@ interface Tool {
   category: string;
   description: string;
   webhookUrl: string;
-  chatType: 'chat' | 'document' | 'analysis' | 'research' | 'compliance' | 'consultation';
+  chatType: 'chat' | 'document' | 'analysis' | 'research' | 'compliance' | 'consultation' | 'due-diligence' | 'data-extraction';
   icon: React.ComponentType<any>;
   priority: number;
 }
@@ -19,7 +19,7 @@ interface ChatMessage {
   timestamp: Date;
   isLoading?: boolean;
   fileAttachment?: string;
-  messageType?: 'text' | 'document' | 'template' | 'scenario' | 'normative' | 'agenda';
+  messageType?: 'text' | 'document' | 'template' | 'scenario' | 'normative' | 'agenda' | 'due-diligence' | 'data-extraction';
   formattedContent?: React.ReactNode;
 }
 
@@ -33,7 +33,22 @@ interface Consultant {
   avatar: string;
 }
 
-// CORE 8 FUNCTIONS - Optimized for High Impact
+interface DueDiligenceResult {
+  companyName: string;
+  status: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  findings: string[];
+  recommendations: string[];
+}
+
+interface ExtractedData {
+  fileName: string;
+  extractedFields: { [key: string]: string };
+  riskScore: number;
+  criticalClauses: string[];
+}
+
+// CORE 8 FUNCTIONS - Updated with New AI Tools
 const coreTools: Tool[] = [
   {
     id: 1,
@@ -87,22 +102,22 @@ const coreTools: Tool[] = [
   },
   {
     id: 6,
-    name: "Firmas Electrónicas",
-    category: "Análisis",
-    description: "Validación y análisis de firmas digitales",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/analisis_de_firmas_electronicas",
-    chatType: 'analysis',
-    icon: PenTool,
+    name: "Due Diligence Automatizado",
+    category: "IA Avanzada",
+    description: "Investigación automática de empresas y personas con IA",
+    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/due_diligence_automatizado",
+    chatType: 'due-diligence',
+    icon: Building2,
     priority: 6
   },
   {
     id: 7,
-    name: "Agenda Legal + Recordatorio de Firmas",
-    category: "Automatización",
-    description: "Gestión automatizada de agenda y recordatorios",
-    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/agenda_legal_automatica",
-    chatType: 'compliance',
-    icon: Calendar,
+    name: "Extracción Masiva de Datos",
+    category: "IA Avanzada",
+    description: "Procesamiento masivo de documentos con extracción inteligente",
+    webhookUrl: "https://604f346ffa2a.ngrok-free.app/webhook-test/extraccion_masiva_datos",
+    chatType: 'data-extraction',
+    icon: Database,
     priority: 7
   },
   {
@@ -158,8 +173,12 @@ function App() {
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [showConsultants, setShowConsultants] = useState(false);
   const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null);
+  const [dueDiligenceResults, setDueDiligenceResults] = useState<DueDiligenceResult[]>([]);
+  const [extractedData, setExtractedData] = useState<ExtractedData[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogin = async () => {
     if (password !== 'UMBRA') {
@@ -222,6 +241,52 @@ Nuestros consultores están especializados en:
           messageType: 'text'
         }
       ]);
+    } else if (tool.id === 6) { // Due Diligence Automatizado
+      setMessages([
+        {
+          id: 1,
+          text: `🏢 **Due Diligence Automatizado UMBRA**
+
+Sistema de investigación automática con IA para empresas y personas.
+
+**Capacidades:**
+• 🔍 Consulta automática a registros públicos
+• 📊 Análisis de riesgo crediticio y legal
+• 🏛️ Verificación en bases gubernamentales
+• 📋 Generación de reportes PDF automáticos
+• ⚠️ Detección de alertas y banderas rojas
+
+**Para comenzar:**
+Ingresa el nombre de la empresa o persona a investigar, o usa los botones de acción rápida.`,
+          isUser: false,
+          timestamp: new Date(),
+          messageType: 'due-diligence'
+        }
+      ]);
+    } else if (tool.id === 7) { // Extracción Masiva de Datos
+      setMessages([
+        {
+          id: 1,
+          text: `📊 **Extracción Masiva de Datos Legales**
+
+Procesamiento inteligente de múltiples documentos con IA avanzada.
+
+**Funcionalidades:**
+• 📁 Upload masivo de documentos (PDF, DOC, TXT)
+• 🤖 Extracción automática de datos estructurados
+• 📈 Análisis comparativo y scoring de riesgo
+• 📋 Export a Excel/CSV para análisis
+• ⚠️ Detección de cláusulas críticas
+
+**Formatos soportados:** PDF, DOC, DOCX, TXT
+**Límite:** Hasta 50 documentos por procesamiento
+
+Sube tus documentos para comenzar el análisis.`,
+          isUser: false,
+          timestamp: new Date(),
+          messageType: 'data-extraction'
+        }
+      ]);
     } else {
       setMessages([
         {
@@ -240,8 +305,12 @@ Nuestros consultores están especializados en:
     setInputMessage('');
     setIsSending(false);
     setUploadedFile(null);
+    setUploadedFiles([]);
     setShowConsultants(false);
     setSelectedConsultant(null);
+    setDueDiligenceResults([]);
+    setExtractedData([]);
+    setSearchQuery('');
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,6 +318,17 @@ Nuestros consultores están especializados en:
     if (file) {
       setUploadedFile(file);
     }
+  };
+
+  const handleMultipleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setUploadedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeUploadedFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleQuickAction = async (action: string) => {
@@ -260,7 +340,11 @@ Nuestros consultores están especializados en:
       'scenario': 'Describe la situación legal que quieres simular y te mostraré posibles consecuencias según la normativa.',
       'normative': '¿Qué normativa específica necesitas consultar? Puedo buscar leyes, artículos y regulaciones vigentes.',
       'agenda': 'Te ayudo a programar recordatorios legales o agendar una consulta. ¿Qué necesitas programar?',
-      'escalate': 'Te voy a conectar con nuestros consultores humanos especializados.'
+      'escalate': 'Te voy a conectar con nuestros consultores humanos especializados.',
+      'search-entity': 'Ingresa el nombre de la empresa o persona para iniciar la investigación automática.',
+      'generate-report': 'Generando reporte PDF con todos los hallazgos encontrados...',
+      'process-documents': 'Iniciando procesamiento masivo de documentos con IA...',
+      'export-data': 'Preparando exportación de datos extraídos a Excel/CSV...'
     };
 
     const userMessage: ChatMessage = {
@@ -286,17 +370,70 @@ Nuestros consultores están especializados en:
       }, 1000);
     }
 
+    // Simulate Due Diligence search
+    if (action === 'search-entity' && searchQuery) {
+      setTimeout(() => {
+        const mockResult: DueDiligenceResult = {
+          companyName: searchQuery,
+          status: 'Activa',
+          riskLevel: 'medium',
+          findings: [
+            'Empresa registrada correctamente',
+            'Sin antecedentes penales',
+            'Historial crediticio regular',
+            'Algunas demandas civiles menores'
+          ],
+          recommendations: [
+            'Revisar garantías adicionales',
+            'Solicitar estados financieros actualizados',
+            'Verificar poderes de representación'
+          ]
+        };
+        setDueDiligenceResults([mockResult]);
+      }, 2000);
+    }
+
+    // Simulate document processing
+    if (action === 'process-documents' && uploadedFiles.length > 0) {
+      setTimeout(() => {
+        const mockExtractedData: ExtractedData[] = uploadedFiles.map((file, index) => ({
+          fileName: file.name,
+          extractedFields: {
+            'Tipo de Contrato': 'Compraventa',
+            'Partes': 'Juan Pérez y María García',
+            'Monto': '$50,000',
+            'Fecha': '2024-01-15',
+            'Vigencia': '12 meses'
+          },
+          riskScore: Math.floor(Math.random() * 100),
+          criticalClauses: [
+            'Cláusula de penalización excesiva',
+            'Falta especificación de garantías'
+          ]
+        }));
+        setExtractedData(mockExtractedData);
+      }, 3000);
+    }
+
     setIsSending(false);
   };
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() && !uploadedFile) return;
+    if (!inputMessage.trim() && !uploadedFile && uploadedFiles.length === 0) return;
 
     setIsSending(true);
 
+    let messageText = inputMessage;
+    if (uploadedFile) {
+      messageText += ` 📎 Archivo: ${uploadedFile.name}`;
+    }
+    if (uploadedFiles.length > 0) {
+      messageText += ` 📁 ${uploadedFiles.length} archivos subidos`;
+    }
+
     const userMessage: ChatMessage = {
       id: messages.length + 1,
-      text: inputMessage || `📎 Archivo: ${uploadedFile?.name}`,
+      text: messageText,
       isUser: true,
       timestamp: new Date(),
       fileAttachment: uploadedFile?.name
@@ -311,6 +448,12 @@ Nuestros consultores están especializados en:
     };
 
     setMessages(prev => [...prev, userMessage, loadingMessage]);
+    
+    // Store search query for due diligence
+    if (selectedTool?.id === 6) {
+      setSearchQuery(inputMessage);
+    }
+    
     setInputMessage('');
     setUploadedFile(null);
 
@@ -323,6 +466,10 @@ Nuestros consultores están especializados en:
         formData.append('file', uploadedFile);
       }
 
+      uploadedFiles.forEach((file, index) => {
+        formData.append(`files[${index}]`, file);
+      });
+
       const response = await fetch(selectedTool!.webhookUrl, {
         method: 'POST',
         headers: {
@@ -333,7 +480,7 @@ Nuestros consultores están especializados en:
 
       const responseText = await response.text();
       
-      // Enhanced response formatting for Chat Legal 24/7
+      // Enhanced response formatting
       let formattedResponse = responseText || "✅ Análisis completado exitosamente.";
       
       if (selectedTool?.id === 1) { // Chat Legal 24/7
@@ -350,6 +497,28 @@ ${responseText || `He procesado tu consulta con éxito.
 
 ---
 💡 **Acciones disponibles:** Analizar documento | Generar plantilla | Consultar normativa | Agendar cita`;
+      } else if (selectedTool?.id === 6) { // Due Diligence
+        formattedResponse = `🔍 **Investigación Completada**
+
+${responseText || `He completado la investigación automática.
+
+**Resultados encontrados:**
+• Registros públicos consultados
+• Análisis de riesgo realizado
+• Verificaciones gubernamentales completadas
+
+Los resultados detallados aparecen en el panel inferior.`}`;
+      } else if (selectedTool?.id === 7) { // Data Extraction
+        formattedResponse = `📊 **Extracción de Datos Completada**
+
+${responseText || `He procesado ${uploadedFiles.length} documentos exitosamente.
+
+**Datos extraídos:**
+• Campos estructurados identificados
+• Análisis de riesgo calculado
+• Cláusulas críticas detectadas
+
+Los resultados están disponibles en la tabla inferior.`}`;
       }
 
       const botResponse: ChatMessage = {
@@ -411,6 +580,27 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
     };
 
     setMessages(prev => [...prev, escalationMessage]);
+  };
+
+  const exportData = (format: 'excel' | 'csv') => {
+    // Simulate export functionality
+    const exportMessage: ChatMessage = {
+      id: messages.length + 1,
+      text: `📥 **Exportación ${format.toUpperCase()} Iniciada**
+
+Preparando archivo con todos los datos extraídos...
+El archivo se descargará automáticamente cuando esté listo.
+
+**Contenido incluido:**
+• Datos estructurados de todos los documentos
+• Scores de riesgo calculados
+• Cláusulas críticas identificadas
+• Recomendaciones de acción`,
+      isUser: false,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, exportMessage]);
   };
 
   // Authentication Screen
@@ -494,10 +684,12 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
 
     const isAdvancedChat = selectedTool.id === 1; // Chat Legal 24/7
     const isConsultation = selectedTool.id === 2; // Consultoría
+    const isDueDiligence = selectedTool.id === 6; // Due Diligence
+    const isDataExtraction = selectedTool.id === 7; // Data Extraction
 
     return (
       <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-4xl h-[75vh] flex flex-col border border-yellow-600/20 animate-slideUp">
+        <div className="bg-gradient-to-br from-gray-900/90 to-black/90 rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col border border-yellow-600/20 animate-slideUp">
           
           {/* Enhanced Header */}
           <div className="flex items-center justify-between p-4 border-b border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
@@ -513,7 +705,7 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {isAdvancedChat && (
+              {(isAdvancedChat || isDueDiligence || isDataExtraction) && (
                 <div className="flex items-center space-x-1 text-xs text-green-400">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   <span>IA Activa</span>
@@ -578,6 +770,57 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
             </div>
           )}
 
+          {/* Due Diligence Quick Actions */}
+          {isDueDiligence && (
+            <div className="p-3 border-b border-yellow-600/10 bg-gradient-to-r from-gray-900/40 to-black/60">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleQuickAction('search-entity')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Search className="w-3 h-3" />
+                  <span>Buscar Entidad</span>
+                </button>
+                <button
+                  onClick={() => handleQuickAction('generate-report')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-green-600/20 hover:bg-green-600/30 text-green-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <FileText className="w-3 h-3" />
+                  <span>Generar Reporte</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Data Extraction Quick Actions */}
+          {isDataExtraction && (
+            <div className="p-3 border-b border-yellow-600/10 bg-gradient-to-r from-gray-900/40 to-black/60">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleQuickAction('process-documents')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Database className="w-3 h-3" />
+                  <span>Procesar Documentos</span>
+                </button>
+                <button
+                  onClick={() => exportData('excel')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-green-600/20 hover:bg-green-600/30 text-green-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Export Excel</span>
+                </button>
+                <button
+                  onClick={() => exportData('csv')}
+                  className="flex items-center space-x-1 px-3 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-full text-xs transition-all duration-200 hover:scale-105"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Consultants Panel */}
           {showConsultants && (
             <div className="p-4 border-b border-yellow-600/10 bg-gradient-to-r from-gray-900/60 to-black/80">
@@ -615,56 +858,167 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
             </div>
           )}
 
-          {/* Enhanced Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black/50 to-gray-900/50">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-messageSlide`}
-              >
-                <div className="flex items-start space-x-2 max-w-2xl">
-                  {!message.isUser && (
-                    <div className="w-8 h-8 bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      {isAdvancedChat ? <Bot className="w-4 h-4 text-black" /> : <selectedTool.icon className="w-4 h-4 text-black" />}
-                    </div>
-                  )}
-                  <div
-                    className={`px-4 py-3 rounded-lg text-sm ${
-                      message.isUser
-                        ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-black font-medium'
-                        : `bg-gray-800/60 text-gray-200 border border-yellow-600/20 ${
-                            message.isLoading ? 'animate-pulse' : ''
-                          }`
-                    }`}
-                  >
-                    {message.fileAttachment && (
-                      <div className="flex items-center mb-2 text-xs opacity-75">
-                        <FileText className="w-3 h-3 mr-1" />
-                        {message.fileAttachment}
+          {/* Main Content Area */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black/50 to-gray-900/50">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-messageSlide`}
+                >
+                  <div className="flex items-start space-x-2 max-w-2xl">
+                    {!message.isUser && (
+                      <div className="w-8 h-8 bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        {isAdvancedChat ? <Bot className="w-4 h-4 text-black" /> : <selectedTool.icon className="w-4 h-4 text-black" />}
                       </div>
                     )}
-                    <div className="whitespace-pre-wrap">{message.text}</div>
-                    {message.isLoading && (
-                      <div className="flex space-x-1 mt-2">
-                        <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce"></div>
-                        <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div
+                      className={`px-4 py-3 rounded-lg text-sm ${
+                        message.isUser
+                          ? 'bg-gradient-to-r from-yellow-600 to-yellow-700 text-black font-medium'
+                          : `bg-gray-800/60 text-gray-200 border border-yellow-600/20 ${
+                              message.isLoading ? 'animate-pulse' : ''
+                            }`
+                      }`}
+                    >
+                      {message.fileAttachment && (
+                        <div className="flex items-center mb-2 text-xs opacity-75">
+                          <FileText className="w-3 h-3 mr-1" />
+                          {message.fileAttachment}
+                        </div>
+                      )}
+                      <div className="whitespace-pre-wrap">{message.text}</div>
+                      {message.isLoading && (
+                        <div className="flex space-x-1 mt-2">
+                          <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce"></div>
+                          <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      )}
+                    </div>
+                    {message.isUser && (
+                      <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <User className="w-4 h-4 text-white" />
                       </div>
                     )}
                   </div>
-                  {message.isUser && (
-                    <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                  )}
                 </div>
+              ))}
+            </div>
+
+            {/* Results Panel for Due Diligence and Data Extraction */}
+            {(isDueDiligence && dueDiligenceResults.length > 0) || (isDataExtraction && extractedData.length > 0) ? (
+              <div className="w-1/3 border-l border-yellow-600/20 bg-gradient-to-b from-gray-900/60 to-black/80 overflow-y-auto">
+                {isDueDiligence && dueDiligenceResults.length > 0 && (
+                  <div className="p-4">
+                    <h4 className="text-yellow-400 text-sm font-medium mb-3">Resultados de Investigación</h4>
+                    {dueDiligenceResults.map((result, index) => (
+                      <div key={index} className="bg-gray-800/40 rounded-lg p-3 mb-3 border border-yellow-600/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-white text-sm font-medium">{result.companyName}</h5>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            result.riskLevel === 'low' ? 'bg-green-600/20 text-green-300' :
+                            result.riskLevel === 'medium' ? 'bg-yellow-600/20 text-yellow-300' :
+                            'bg-red-600/20 text-red-300'
+                          }`}>
+                            {result.riskLevel.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-xs mb-2">Estado: {result.status}</p>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-gray-300 text-xs font-medium">Hallazgos:</p>
+                            <ul className="text-gray-400 text-xs space-y-1">
+                              {result.findings.map((finding, i) => (
+                                <li key={i}>• {finding}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-gray-300 text-xs font-medium">Recomendaciones:</p>
+                            <ul className="text-gray-400 text-xs space-y-1">
+                              {result.recommendations.map((rec, i) => (
+                                <li key={i}>• {rec}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {isDataExtraction && extractedData.length > 0 && (
+                  <div className="p-4">
+                    <h4 className="text-yellow-400 text-sm font-medium mb-3">Datos Extraídos</h4>
+                    {extractedData.map((data, index) => (
+                      <div key={index} className="bg-gray-800/40 rounded-lg p-3 mb-3 border border-yellow-600/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-white text-sm font-medium truncate">{data.fileName}</h5>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            data.riskScore < 30 ? 'bg-green-600/20 text-green-300' :
+                            data.riskScore < 70 ? 'bg-yellow-600/20 text-yellow-300' :
+                            'bg-red-600/20 text-red-300'
+                          }`}>
+                            {data.riskScore}%
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-gray-300 text-xs font-medium">Campos Extraídos:</p>
+                            <div className="text-gray-400 text-xs space-y-1">
+                              {Object.entries(data.extractedFields).map(([key, value]) => (
+                                <div key={key} className="flex justify-between">
+                                  <span>{key}:</span>
+                                  <span className="text-white">{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {data.criticalClauses.length > 0 && (
+                            <div>
+                              <p className="text-red-300 text-xs font-medium">Cláusulas Críticas:</p>
+                              <ul className="text-red-400 text-xs space-y-1">
+                                {data.criticalClauses.map((clause, i) => (
+                                  <li key={i}>• {clause}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ))}
+            ) : null}
           </div>
 
           {/* Enhanced Input */}
           <div className="p-4 border-t border-yellow-600/20 bg-gradient-to-r from-gray-900/80 to-black/80">
-            {uploadedFile && (
+            {/* Multiple Files Display for Data Extraction */}
+            {isDataExtraction && uploadedFiles.length > 0 && (
+              <div className="mb-2 max-h-20 overflow-y-auto">
+                <div className="flex flex-wrap gap-2">
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center space-x-2 text-xs text-yellow-300 bg-yellow-600/10 px-2 py-1 rounded-lg">
+                      <FileText className="w-3 h-3" />
+                      <span className="truncate max-w-32">{file.name}</span>
+                      <button
+                        onClick={() => removeUploadedFile(index)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Single File Display */}
+            {uploadedFile && !isDataExtraction && (
               <div className="mb-2 flex items-center space-x-2 text-xs text-yellow-300 bg-yellow-600/10 px-3 py-2 rounded-lg">
                 <FileText className="w-4 h-4" />
                 <span>{uploadedFile.name}</span>
@@ -676,6 +1030,7 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                 </button>
               </div>
             )}
+
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -683,21 +1038,30 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 disabled={isSending}
-                placeholder={isAdvancedChat ? "Describe tu consulta legal o sube un documento..." : "Escribe tu consulta..."}
+                placeholder={
+                  isDueDiligence ? "Ingresa nombre de empresa o persona a investigar..." :
+                  isDataExtraction ? "Describe el tipo de datos a extraer..." :
+                  isAdvancedChat ? "Describe tu consulta legal o sube un documento..." : 
+                  "Escribe tu consulta..."
+                }
                 className="flex-1 bg-black/40 text-yellow-100 px-4 py-3 rounded-lg border border-yellow-600/30 focus:border-yellow-400 focus:outline-none disabled:opacity-50 text-sm placeholder-gray-500"
               />
+              
+              {/* File Upload Button */}
               <label className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-3 rounded-lg transition-all duration-200 cursor-pointer hover:scale-105">
                 <Upload className="w-4 h-4" />
                 <input
                   type="file"
-                  onChange={handleFileUpload}
+                  onChange={isDataExtraction ? handleMultipleFileUpload : handleFileUpload}
                   className="hidden"
                   accept=".pdf,.doc,.docx,.txt"
+                  multiple={isDataExtraction}
                 />
               </label>
+              
               <button
                 onClick={sendMessage}
-                disabled={isSending || (!inputMessage.trim() && !uploadedFile)}
+                disabled={isSending || (!inputMessage.trim() && !uploadedFile && uploadedFiles.length === 0)}
                 className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-black px-4 py-3 rounded-lg transition-all duration-200 disabled:opacity-50 font-medium transform hover:scale-105"
               >
                 <Send className="w-4 h-4" />
@@ -725,7 +1089,7 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
             UMBRA
           </h1>
           <p className="text-base text-gray-400 font-light tracking-[0.2em] uppercase animate-fadeIn">
-            Advanced Legal Intelligence • Asistente Legal 24/7 + Consultoría Especializada
+            Advanced Legal Intelligence • IA Avanzada + Due Diligence + Extracción Masiva
           </p>
           <div className="mt-3 w-24 h-px bg-gradient-to-r from-transparent via-yellow-600 to-transparent mx-auto animate-expand"></div>
         </div>
@@ -744,6 +1108,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                     ? 'border-yellow-400/60 hover:border-yellow-300/80 shadow-yellow-600/20' 
                     : tool.id === 2
                     ? 'border-blue-400/60 hover:border-blue-300/80 shadow-blue-600/20'
+                    : (tool.id === 6 || tool.id === 7)
+                    ? 'border-purple-400/60 hover:border-purple-300/80 shadow-purple-600/20'
                     : 'border-yellow-600/30 hover:border-yellow-400/80 hover:shadow-yellow-600/20'
                 }`}
                 onClick={() => openChat(tool)}
@@ -756,6 +1122,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                     ? 'bg-gradient-to-br from-yellow-600/0 to-yellow-600/20' 
                     : tool.id === 2
                     ? 'bg-gradient-to-br from-blue-600/0 to-blue-600/15'
+                    : (tool.id === 6 || tool.id === 7)
+                    ? 'bg-gradient-to-br from-purple-600/0 to-purple-600/15'
                     : 'bg-gradient-to-br from-yellow-600/0 to-yellow-600/15'
                 }`}></div>
                 
@@ -767,6 +1135,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                         ? 'bg-gradient-to-br from-yellow-500/30 to-yellow-600/40 group-hover:from-yellow-400/40 group-hover:to-yellow-500/50' 
                         : tool.id === 2
                         ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/40 group-hover:from-blue-400/40 group-hover:to-blue-500/50'
+                        : (tool.id === 6 || tool.id === 7)
+                        ? 'bg-gradient-to-br from-purple-500/30 to-purple-600/40 group-hover:from-purple-400/40 group-hover:to-purple-500/50'
                         : 'bg-gradient-to-br from-yellow-600/20 to-yellow-700/30 group-hover:from-yellow-500/30 group-hover:to-yellow-600/40'
                     }`}>
                       <tool.icon className={`w-8 h-8 transition-colors duration-300 ${
@@ -774,6 +1144,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                           ? 'text-yellow-300 group-hover:text-yellow-200' 
                           : tool.id === 2
                           ? 'text-blue-300 group-hover:text-blue-200'
+                          : (tool.id === 6 || tool.id === 7)
+                          ? 'text-purple-300 group-hover:text-purple-200'
                           : 'text-yellow-400 group-hover:text-yellow-300'
                       }`} />
                     </div>
@@ -785,6 +1157,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                       ? 'text-yellow-200 group-hover:text-yellow-100' 
                       : tool.id === 2
                       ? 'text-blue-200 group-hover:text-blue-100'
+                      : (tool.id === 6 || tool.id === 7)
+                      ? 'text-purple-200 group-hover:text-purple-100'
                       : 'text-yellow-100 group-hover:text-yellow-300'
                   }`}>
                     {tool.name}
@@ -801,6 +1175,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                       ? 'bg-yellow-500/20' 
                       : tool.id === 2
                       ? 'bg-blue-500/20'
+                      : (tool.id === 6 || tool.id === 7)
+                      ? 'bg-purple-500/20'
                       : 'bg-yellow-600/20'
                   }`}>
                     <span className={`text-[10px] uppercase tracking-wider font-medium ${
@@ -808,6 +1184,8 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                         ? 'text-yellow-200' 
                         : tool.id === 2
                         ? 'text-blue-200'
+                        : (tool.id === 6 || tool.id === 7)
+                        ? 'text-purple-200'
                         : 'text-yellow-300'
                     }`}>
                       {tool.category}
@@ -821,19 +1199,23 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
                         ? 'bg-yellow-300' 
                         : tool.id === 2
                         ? 'bg-blue-300'
+                        : (tool.id === 6 || tool.id === 7)
+                        ? 'bg-purple-300'
                         : 'bg-yellow-400'
                     }`}></div>
                   </div>
 
                   {/* Special Badge for Advanced Tools */}
-                  {(tool.id === 1 || tool.id === 2) && (
+                  {(tool.id === 1 || tool.id === 2 || tool.id === 6 || tool.id === 7) && (
                     <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className={`px-2 py-1 rounded-full text-[8px] font-bold ${
                         tool.id === 1 
                           ? 'bg-yellow-400 text-black' 
-                          : 'bg-blue-400 text-black'
+                          : tool.id === 2
+                          ? 'bg-blue-400 text-black'
+                          : 'bg-purple-400 text-black'
                       }`}>
-                        {tool.id === 1 ? 'IA+' : 'EXPERT'}
+                        {tool.id === 1 ? 'IA+' : tool.id === 2 ? 'EXPERT' : 'AI'}
                       </div>
                     </div>
                   )}
@@ -861,8 +1243,13 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
               </div>
               <div className="w-px h-10 bg-yellow-600/30"></div>
               <div className="text-center">
-                <div className="text-xl font-light text-green-400">80%</div>
-                <div className="text-xs text-gray-500 uppercase tracking-wider">Impacto</div>
+                <div className="text-xl font-light text-purple-400">AI+</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Due Diligence</div>
+              </div>
+              <div className="w-px h-10 bg-yellow-600/30"></div>
+              <div className="text-center">
+                <div className="text-xl font-light text-green-400">Mass</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">Data Extract</div>
               </div>
             </div>
           </div>
@@ -875,7 +1262,7 @@ Tu consulta ha sido escalada exitosamente. El consultor revisará tu caso y te c
       {/* Enhanced Footer */}
       <footer className="border-t border-yellow-600/10 py-4 text-center bg-gradient-to-t from-gray-900/30 to-transparent relative z-10">
         <p className="text-gray-600 text-xs font-light tracking-[0.15em] uppercase">
-          © 2025 UMBRA • Advanced Legal Intelligence • IA + Human Expertise
+          © 2025 UMBRA • Advanced Legal Intelligence • IA + Human Expertise + Due Diligence + Mass Data Processing
         </p>
       </footer>
 
